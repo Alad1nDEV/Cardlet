@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Obrázkové flash-karty</title>
+<style>
+ body{font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:column;align-items:center;
+      gap:18px;margin:0;padding:40px;background:#f0f0f0}
+ h1{margin:0;font-size:2rem}
+ #stats{font-size:1.1rem}
+ #card{width:300px;height:400px;perspective:1000px;display:none}
+ .inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .6s}
+ .flipped{transform:rotateY(180deg)}
+ .side{position:absolute;inset:0;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.25);
+       backface-visibility:hidden;display:flex;justify-content:center;align-items:center;
+       background:#fff;padding:20px;box-sizing:border-box}
+ .side img{max-width:100%;max-height:100%;border-radius:10px}
+ .back{transform:rotateY(180deg);font-size:1.3em;text-align:center}
+ #ctrl{display:flex;gap:25px}
+ button{font-size:2rem;padding:8px 22px;border:none;border-radius:8px;cursor:pointer;color:#fff;
+        transition:transform .15s}
+ button:active{transform:scale(.88)}
+ .wrong{background:#f44336}
+ .right{background:#4caf50}
+ .alt{background:#2196f3}
+ .small{font-size:.9rem}
+</style>
+</head>
+<body>
+
+<h1>Obrázkové flash-karty</h1>
+
+<input type="file" id="file" accept=".csv">
+<button id="btnReset" class="small">Reset</button>
+<div id="stats"></div>
+
+<div id="card">
+  <div class="inner" id="inner">
+    <div class="side front"><img id="pic" alt=""></div>
+    <div class="side back" id="title"></div>
+  </div>
+</div>
+
+<div id="ctrl" style="display:none">
+  <button class="wrong" id="btnWrong">✖</button>
+  <button class="alt"  id="btnAlt">🔄</button>
+  <button class="right" id="btnRight">✔</button>
+</div>
+
+<script>
+/* === výchozí ukázková data ============================================== */
+const DEFAULT_CSV = `krásnoočko,Euglena,https://commons.wikimedia.org/wiki/Special:FilePath/Euglena.jpg
+trepka,Paramecium,https://commons.wikimedia.org/wiki/Special:FilePath/Paramecium.jpg
+nezmar hnědý,Hydra oligactis,https://commons.wikimedia.org/wiki/Special:FilePath/Hydra_oligactis.jpg
+talířovka ušatá,Aurelia aurita,https://commons.wikimedia.org/wiki/Special:FilePath/Aurelia_aurita.jpg
+korál červený,Corallium rubrum,https://commons.wikimedia.org/wiki/Special:FilePath/Corallium_rubrum.jpg
+sasanka koňská,Actinia equina,https://commons.wikimedia.org/wiki/Special:FilePath/Actinia_equina.jpg
+ploštěnka mléčná,Dugesia lactea,https://commons.wikimedia.org/wiki/Special:FilePath/Dugesia_lactea.jpg
+motolice jaterní,Fasciola hepatica,https://commons.wikimedia.org/wiki/Special:FilePath/Fasciola_hepatica.jpg
+tasemnice bezbranná,Taenia saginata,https://commons.wikimedia.org/wiki/Special:FilePath/Taenia_saginata.jpg
+škrkavka dětská,Ascaris lumbricoides,https://commons.wikimedia.org/wiki/Special:FilePath/Ascaris_lumbricoides.jpg
+roup dětský,Enterobius vermicularis,https://commons.wikimedia.org/wiki/Special:FilePath/Enterobius_vermicularis.jpg
+hlemýžď zahradní,Helix pomatia,https://commons.wikimedia.org/wiki/Special:FilePath/Helix_pomatia.jpg
+plovatka bahenní,Lymnaea stagnalis,https://commons.wikimedia.org/wiki/Special:FilePath/Lymnaea_stagnalis.jpg
+škeble rybničná,Anodonta cygnea,https://commons.wikimedia.org/wiki/Special:FilePath/Anodonta_cygnea.jpg
+velevrub malířský,Unio pictorum,https://commons.wikimedia.org/wiki/Special:FilePath/Unio_pictorum.jpg
+sépie obecná,Sepia officinalis,https://commons.wikimedia.org/wiki/Special:FilePath/Sepia_officinalis.jpg
+žížala obecná,Lumbricus terrestris,https://commons.wikimedia.org/wiki/Special:FilePath/Lumbricus_terrestris.jpg
+pijavka koňská,Haemopis sanguisuga,https://commons.wikimedia.org/wiki/Special:FilePath/Haemopis_sanguisuga.jpg
+štír kýlnatý,Euscorpius carpathicus,https://commons.wikimedia.org/wiki/Special:FilePath/Euscorpius_carpathicus.jpg
+křižák obecný,Araneus diadematus,https://commons.wikimedia.org/wiki/Special:FilePath/Araneus_diadematus.jpg
+vodouch stříbřitý,Argyroneta aquatica,https://commons.wikimedia.org/wiki/Special:FilePath/Argyroneta_aquatica.jpg
+sekáč domácí,Phalangium opilio,https://commons.wikimedia.org/wiki/Special:FilePath/Phalangium_opilio.jpg
+klíště obecné,Ixodes ricinus,https://commons.wikimedia.org/wiki/Special:FilePath/Ixodes_ricinus.jpg
+hrotnatka průhledná,Daphnia pulex,https://commons.wikimedia.org/wiki/Special:FilePath/Daphnia_pulex.jpg
+buchanka obecná,Cyclops strenuus,https://commons.wikimedia.org/wiki/Special:FilePath/Cyclops_strenuus.jpg
+rak říční,Astacus astacus,https://commons.wikimedia.org/wiki/Special:FilePath/Astacus_astacus.jpg
+langusta obecná,Palinurus vulgaris,https://commons.wikimedia.org/wiki/Special:FilePath/Palinurus_vulgaris.jpg
+mnohonožka zemní,Julus terrestris,https://commons.wikimedia.org/wiki/Special:FilePath/Julus_terrestris.jpg
+stonožka škvorová,Lithobius forficatus,https://commons.wikimedia.org/wiki/Special:FilePath/Lithobius_forficatus.jpg
+škvor obecný,Forficula auricularia,https://commons.wikimedia.org/wiki/Special:FilePath/Forficula_auricularia.jpg
+šváb obecný,Blatta orientalis,https://commons.wikimedia.org/wiki/Special:FilePath/Blatta_orientalis.jpg
+cvrček polní,Gryllus campestris,https://commons.wikimedia.org/wiki/Special:FilePath/Gryllus_campestris.jpg
+krtonožka obecná,Gryllotalpa gryllotalpa,https://commons.wikimedia.org/wiki/Special:FilePath/Gryllotalpa_gryllotalpa.jpg
+saranče modrokřídlá,Oedipoda caerulescens,https://commons.wikimedia.org/wiki/Special:FilePath/Oedipoda_caerulescens.jpg
+ruměnice pospolná,Pyrrhocoris apterus,https://commons.wikimedia.org/wiki/Special:FilePath/Pyrrhocoris_apterus.jpg
+roháč obecný,Lucanus cervus,https://commons.wikimedia.org/wiki/Special:FilePath/Lucanus_cervus.jpg
+chroust obecný,Melolontha melolontha,https://commons.wikimedia.org/wiki/Special:FilePath/Melolontha_melolontha.jpg
+nosorožík kapucínek,Oryctes nasicornis,https://commons.wikimedia.org/wiki/Special:FilePath/Oryctes_nasicornis.jpg
+střevlík kožitý,Carabus coriaceus,https://commons.wikimedia.org/wiki/Special:FilePath/Carabus_coriaceus.jpg
+střevlík fialový,Carabus violaceus,https://commons.wikimedia.org/wiki/Special:FilePath/Carabus_violaceus.jpg
+hrobařík obecný,Nicrophorus vespillo,https://commons.wikimedia.org/wiki/Special:FilePath/Nicrophorus_vespillo.jpg
+tesařík obecný,Cerambyx cerdo,https://commons.wikimedia.org/wiki/Special:FilePath/Cerambyx_cerdo.jpg
+potemník moučný,Tenebrio molitor,https://commons.wikimedia.org/wiki/Special:FilePath/Tenebrio_molitor.jpg
+kožojed obecný,Dermestes lardarius,https://commons.wikimedia.org/wiki/Special:FilePath/Dermestes_lardarius.jpg
+světluška menší,Lamprohiza splendidula,https://commons.wikimedia.org/wiki/Special:FilePath/Lamprohiza_splendidula.jpg
+lumek velký,Ichneumon eumerus,https://commons.wikimedia.org/wiki/Special:FilePath/Ichneumon_eumerus.jpg
+sršeň obecná,Vespa crabro,https://commons.wikimedia.org/wiki/Special:FilePath/Vespa_crabro.jpg
+přástevník medvědí,Arctia caja,https://commons.wikimedia.org/wiki/Special:FilePath/Arctia_caja.jpg
+stužkonoska modrá,Catocala fraxini,https://commons.wikimedia.org/wiki/Special:FilePath/Catocala_fraxini.jpg
+lišaj paví oko,Smerinthus ocellata,https://commons.wikimedia.org/wiki/Special:FilePath/Smerinthus_ocellata.jpg
+babočka admirál,Vanessa atalanta,https://commons.wikimedia.org/wiki/Special:FilePath/Vanessa_atalanta.jpg
+babočka osiková,Nymphalis antiopa,https://commons.wikimedia.org/wiki/Special:FilePath/Nymphalis_antiopa.jpg
+babočka kopřivová,Aglais urticae,https://commons.wikimedia.org/wiki/Special:FilePath/Aglais_urticae.jpg
+babočka paví oko,Aglais io,https://commons.wikimedia.org/wiki/Special:FilePath/Aglais_io.jpg
+bělásek zelný,Pieris brassicae,https://commons.wikimedia.org/wiki/Special:FilePath/Pieris_brassicae.jpg
+bělásek řeřichový,Pieris rapae,https://commons.wikimedia.org/wiki/Special:FilePath/Pieris_rapae.jpg
+otakárek fenyklový,Papilio machaon,https://commons.wikimedia.org/wiki/Special:FilePath/Papilio_machaon.jpg
+batolec duhový,Apatura iris,https://commons.wikimedia.org/wiki/Special:FilePath/Apatura_iris.jpg
+tiplice luční,Tipula paludosa,https://commons.wikimedia.org/wiki/Special:FilePath/Tipula_paludosa.jpg
+komár pisklavý,Culex pipiens,https://commons.wikimedia.org/wiki/Special:FilePath/Culex_pipiens.jpg
+octomilka obecná,Drosophila melanogaster,https://commons.wikimedia.org/wiki/Special:FilePath/Drosophila_melanogaster.jpg
+kloš jelení,Lipoptena cervi,https://commons.wikimedia.org/wiki/Special:FilePath/Lipoptena_cervi.jpg
+moucha domácí,Musca domestica,https://commons.wikimedia.org/wiki/Special:FilePath/Musca_domestica.jpg
+ovád bzučivý,Tabanus bovinus,https://commons.wikimedia.org/wiki/Special:FilePath/Tabanus_bovinus.jpg
+blecha obecná,Pulex irritans,https://commons.wikimedia.org/wiki/Special:FilePath/Pulex_irritans.jpg
+hvězdice,Asterias rubens,https://commons.wikimedia.org/wiki/Special:FilePath/Asterias_rubens.jpg
+hadice,Ophiura ophiura,https://commons.wikimedia.org/wiki/Special:FilePath/Ophiura_ophiura.jpg
+ježovka,Echinus esculentus,https://commons.wikimedia.org/wiki/Special:FilePath/Echinus_esculentus.jpg
+mihule potoční,Lampetra planeri,https://commons.wikimedia.org/wiki/Special:FilePath/Lampetra_planeri.jpg
+žralok,Carcharodon carcharias,https://commons.wikimedia.org/wiki/Special:FilePath/Carcharodon_carcharias.jpg
+rejnok,Raja clavata,https://commons.wikimedia.org/wiki/Special:FilePath/Raja_clavata.jpg
+štika obecná,Esox lucius,https://commons.wikimedia.org/wiki/Special:FilePath/Esox_lucius.jpg
+kapr obecný,Cyprinus carpio,https://commons.wikimedia.org/wiki/Special:FilePath/Cyprinus_carpio.jpg
+úhoř říční,Anguilla anguilla,https://commons.wikimedia.org/wiki/Special:FilePath/Anguilla_anguilla.jpg
+pstruh obecný,Salmo trutta,https://commons.wikimedia.org/wiki/Special:FilePath/Salmo_trutta.jpg
+okoun říční,Perca fluviatilis,https://commons.wikimedia.org/wiki/Special:FilePath/Perca_fluviatilis.jpg
+losos obecný,Salmo salar,https://commons.wikimedia.org/wiki/Special:FilePath/Salmo_salar.jpg
+jeseter velký,Acipenser sturio,https://commons.wikimedia.org/wiki/Special:FilePath/Acipenser_sturio.jpg
+vranka obecná,Cottus gobio,https://commons.wikimedia.org/wiki/Special:FilePath/Cottus_gobio.jpg
+ropucha obecná,Bufo bufo,https://commons.wikimedia.org/wiki/Special:FilePath/Bufo_bufo.jpg
+skokan zelený,Pelophylax esculentus,https://commons.wikimedia.org/wiki/Special:FilePath/Pelophylax_esculentus.jpg
+rosnička zelená,Hyla arborea,https://commons.wikimedia.org/wiki/Special:FilePath/Hyla_arborea.jpg
+čolek velký,Triturus cristatus,https://commons.wikimedia.org/wiki/Special:FilePath/Triturus_cristatus.jpg
+mlok skvrnitý,Salamandra salamandra,https://commons.wikimedia.org/wiki/Special:FilePath/Salamandra_salamandra.jpg
+užovka obojková,Natrix natrix,https://commons.wikimedia.org/wiki/Special:FilePath/Natrix_natrix.jpg
+zmije obecná,Vipera berus,https://commons.wikimedia.org/wiki/Special:FilePath/Vipera_berus.jpg
+slepýš křehký,Anguis fragilis,https://commons.wikimedia.org/wiki/Special:FilePath/Anguis_fragilis.jpg
+ještěrka obecná,Lacerta agilis,https://commons.wikimedia.org/wiki/Special:FilePath/Lacerta_agilis.jpg
+želva bahenní,Emys orbicularis,https://commons.wikimedia.org/wiki/Special:FilePath/Emys_orbicularis.jpg
+pštros dvouprstý,Struthio camelus,https://commons.wikimedia.org/wiki/Special:FilePath/Struthio_camelus.jpg
+kivi jižní,Apteryx australis,https://commons.wikimedia.org/wiki/Special:FilePath/Apteryx_australis.jpg
+tučňák patagonský,Aptenodytes patagonicus,https://commons.wikimedia.org/wiki/Special:FilePath/Aptenodytes_patagonicus.jpg
+kachna divoká,Anas platyrhynchos,https://commons.wikimedia.org/wiki/Special:FilePath/Anas_platyrhynchos.jpg
+káně lesní,Buteo buteo,https://commons.wikimedia.org/wiki/Special:FilePath/Buteo_buteo.jpg
+poštolka obecná,Falco tinnunculus,https://commons.wikimedia.org/wiki/Special:FilePath/Falco_tinnunculus.jpg
+koroptev polní,Perdix perdix,https://commons.wikimedia.org/wiki/Special:FilePath/Perdix_perdix.jpg
+křepelka polní,Coturnix coturnix,https://commons.wikimedia.org/wiki/Special:FilePath/Coturnix_coturnix.jpg
+racek chechtavý,Chroicocephalus ridibundus,https://commons.wikimedia.org/wiki/Special:FilePath/Chroicocephalus_ridibundus.jpg
+hrdlička divoká,Streptopelia turtur,https://commons.wikimedia.org/wiki/Special:FilePath/Streptopelia_turtur.jpg
+sýček obecný,Athene noctua,https://commons.wikimedia.org/wiki/Special:FilePath/Athene_noctua.jpg
+kukačka obecná,Cuculus canorus,https://commons.wikimedia.org/wiki/Special:FilePath/Cuculus_canorus.jpg
+strakapoud velký,Dendrocopos major,https://commons.wikimedia.org/wiki/Special:FilePath/Dendrocopos_major.jpg
+drozd zpěvný,Turdus philomelos,https://commons.wikimedia.org/wiki/Special:FilePath/Turdus_philomelos.jpg
+kos černý,Turdus merula,https://commons.wikimedia.org/wiki/Special:FilePath/Turdus_merula.jpg
+červenka obecná,Erithacus rubecula,https://commons.wikimedia.org/wiki/Special:FilePath/Erithacus_rubecula.jpg
+slavík obecný,Luscinia megarhynchos,https://commons.wikimedia.org/wiki/Special:FilePath/Luscinia_megarhynchos.jpg
+sýkora koňadra,Parus major,https://commons.wikimedia.org/wiki/Special:FilePath/Parus_major.jpg
+vlaštovka obecná,Hirundo rustica,https://commons.wikimedia.org/wiki/Special:FilePath/Hirundo_rustica.jpg
+brhlík lesní,Sitta europaea,https://commons.wikimedia.org/wiki/Special:FilePath/Sitta_europaea.jpg
+stehlík obecný,Carduelis carduelis,https://commons.wikimedia.org/wiki/Special:FilePath/Carduelis_carduelis.jpg
+pěnkava obecná,Fringilla coelebs,https://commons.wikimedia.org/wiki/Special:FilePath/Fringilla_coelebs.jpg
+skřivan polní,Alauda arvensis,https://commons.wikimedia.org/wiki/Special:FilePath/Alauda_arvensis.jpg
+konipas bílý,Motacilla alba,https://commons.wikimedia.org/wiki/Special:FilePath/Motacilla_alba.jpg
+špaček obecný,Sturnus vulgaris,https://commons.wikimedia.org/wiki/Special:FilePath/Sturnus_vulgaris.jpg
+vrána obecná,Corvus corone,https://commons.wikimedia.org/wiki/Special:FilePath/Corvus_corone.jpg
+havran polní,Corvus frugilegus,https://commons.wikimedia.org/wiki/Special:FilePath/Corvus_frugilegus.jpg
+jiřička obecná,Delichon urbicum,https://commons.wikimedia.org/wiki/Special:FilePath/Delichon_urbicum.jpg
+straka obecná,Pica pica,https://commons.wikimedia.org/wiki/Special:FilePath/Pica_pica.jpg
+sojka obecná,Garrulus glandarius,https://commons.wikimedia.org/wiki/Special:FilePath/Garrulus_glandarius.jpg
+ptakopysk podivný,Ornithorhynchus anatinus,https://commons.wikimedia.org/wiki/Special:FilePath/Ornithorhynchus_anatinus.jpg
+ježura australská,Tachyglossus aculeatus,https://commons.wikimedia.org/wiki/Special:FilePath/Tachyglossus_aculeatus.jpg
+klokan rudý,Macropus rufus,https://commons.wikimedia.org/wiki/Special:FilePath/Macropus_rufus.jpg
+ježek západní,Erinaceus europaeus,https://commons.wikimedia.org/wiki/Special:FilePath/Erinaceus_europaeus.jpg
+krtek obecný,Talpa europaea,https://commons.wikimedia.org/wiki/Special:FilePath/Talpa_europaea.jpg
+rejsek obecný,Sorex araneus,https://commons.wikimedia.org/wiki/Special:FilePath/Sorex_araneus.jpg
+netopýr velký,Myotis myotis,https://commons.wikimedia.org/wiki/Special:FilePath/Myotis_myotis.jpg
+makak rhesus,Macaca mulatta,https://commons.wikimedia.org/wiki/Special:FilePath/Macaca_mulatta.jpg
+pavián pláštíkový,Papio hamadryas,https://commons.wikimedia.org/wiki/Special:FilePath/Papio_hamadryas.jpg
+šimpanz učenlivý,Pan troglodytes,https://commons.wikimedia.org/wiki/Special:FilePath/Pan_troglodytes.jpg
+gorila obecná,Gorilla gorilla,https://commons.wikimedia.org/wiki/Special:FilePath/Gorilla_gorilla.jpg
+orangutan,Pongo pygmaeus,https://commons.wikimedia.org/wiki/Special:FilePath/Pongo_pygmaeus.jpg
+pásovec,Dasypus novemcinctus,https://commons.wikimedia.org/wiki/Special:FilePath/Dasypus_novemcinctus.jpg
+mravenečník veliký,Myrmecophaga tridactyla,https://commons.wikimedia.org/wiki/Special:FilePath/Myrmecophaga_tridactyla.jpg
+lenochod,Bradypus tridactylus,https://commons.wikimedia.org/wiki/Special:FilePath/Bradypus_tridactylus.jpg
+zajíc polní,Lepus europaeus,https://commons.wikimedia.org/wiki/Special:FilePath/Lepus_europaeus.jpg
+králík divoký,Oryctolagus cuniculus,https://commons.wikimedia.org/wiki/Special:FilePath/Oryctolagus_cuniculus.jpg
+sysel obecný,Spermophilus citellus,https://commons.wikimedia.org/wiki/Special:FilePath/Spermophilus_citellus.jpg
+krysa obecná,Rattus rattus,https://commons.wikimedia.org/wiki/Special:FilePath/Rattus_rattus.jpg
+potkan,Rattus norvegicus,https://commons.wikimedia.org/wiki/Special:FilePath/Rattus_norvegicus.jpg
+křeček polní,Cricetus cricetus,https://commons.wikimedia.org/wiki/Special:FilePath/Cricetus_cricetus.jpg
+ondatra pižmová,Ondatra zibethicus,https://commons.wikimedia.org/wiki/Special:FilePath/Ondatra_zibethicus.jpg
+hraboš polní,Microtus arvalis,https://commons.wikimedia.org/wiki/Special:FilePath/Microtus_arvalis.jpg
+nutrie říční,Myocastor coypus,https://commons.wikimedia.org/wiki/Special:FilePath/Myocastor_coypus.jpg
+rys ostrovid,Lynx lynx,https://commons.wikimedia.org/wiki/Special:FilePath/Lynx_lynx.jpg
+hyena,Hyaena hyaena,https://commons.wikimedia.org/wiki/Special:FilePath/Hyaena_hyaena.jpg
+vlk,Canis lupus,https://commons.wikimedia.org/wiki/Special:FilePath/Canis_lupus.jpg
+liška,Vulpes vulpes,https://commons.wikimedia.org/wiki/Special:FilePath/Vulpes_vulpes.jpg
+kuna lesní,Martes martes,https://commons.wikimedia.org/wiki/Special:FilePath/Martes_martes.jpg
+lasice hranostaj,Mustela erminea,https://commons.wikimedia.org/wiki/Special:FilePath/Mustela_erminea.jpg
+tchoř tmavý,Mustela putorius,https://commons.wikimedia.org/wiki/Special:FilePath/Mustela_putorius.jpg
+vydra říční,Lutra lutra,https://commons.wikimedia.org/wiki/Special:FilePath/Lutra_lutra.jpg
+jezevec lesní,Meles meles,https://commons.wikimedia.org/wiki/Special:FilePath/Meles_meles.jpg
+lachtan,Otaria flavescens,https://commons.wikimedia.org/wiki/Special:FilePath/Otaria_flavescens.jpg
+delfín obecný,Delphinus delphis,https://commons.wikimedia.org/wiki/Special:FilePath/Delphinus_delphis.jpg
+plejtvák myšok,Balaenoptera physalus,https://commons.wikimedia.org/wiki/Special:FilePath/Balaenoptera_physalus.jpg
+slon africký,Loxodonta africana,https://commons.wikimedia.org/wiki/Special:FilePath/Loxodonta_africana.jpg
+slon indický,Elephas maximus,https://commons.wikimedia.org/wiki/Special:FilePath/Elephas_maximus.jpg
+osel domácí,Equus asinus,https://commons.wikimedia.org/wiki/Special:FilePath/Equus_asinus.jpg
+prase divoké,Sus scrofa,https://commons.wikimedia.org/wiki/Special:FilePath/Sus_scrofa.jpg
+jelen evropský,Cervus elaphus,https://commons.wikimedia.org/wiki/Special:FilePath/Cervus_elaphus.jpg
+daněk skvrnitý,Dama dama,https://commons.wikimedia.org/wiki/Special:FilePath/Dama_dama.jpg
+srnec obecný,Capreolus capreolus,https://commons.wikimedia.org/wiki/Special:FilePath/Capreolus_capreolus.jpg
+sob polární,Rangifer tarandus,https://commons.wikimedia.org/wiki/Special:FilePath/Rangifer_tarandus.jpg
+zubr evropský,Bison bonasus,https://commons.wikimedia.org/wiki/Special:FilePath/Bison_bonasus.jpg
+kudu velký,Tragelaphus strepsiceros,https://commons.wikimedia.org/wiki/Special:FilePath/Tragelaphus_strepsiceros.jpg
+kamzík horský,Rupicapra rupicapra,https://commons.wikimedia.org/wiki/Special:FilePath/Rupicapra_rupicapra.jpg
+muflon,Ovis musimon,https://commons.wikimedia.org/wiki/Special:FilePath/Ovis_musimon.jpg`; // [1]
+
+/* === proměnné stavu ====================================================== */
+const TRANS = 600;   // délka otočení (ms)
+let deck=[], unknown=[], idx=0, round=1, rightCnt=0, wrongCnt=0;
+
+/* === prvky DOM =========================================================== */
+const fileInput = document.getElementById('file');
+const btnReset  = document.getElementById('btnReset');
+const card      = document.getElementById('card');
+const inner     = document.getElementById('inner');
+const pic       = document.getElementById('pic');
+const title     = document.getElementById('title');
+const btnW      = document.getElementById('btnWrong');
+const btnR      = document.getElementById('btnRight');
+const btnAlt    = document.getElementById('btnAlt');
+const stats     = document.getElementById('stats');
+const ctrl      = document.getElementById('ctrl');
+
+/* === CSV → objekty ======================================================= */
+function parseCSV(text){
+  return text.split(/\r?\n/)
+             .filter(l=>l.trim())
+             .map(l=>{
+               const c = l.split(',');
+               const lat = (c[1]||'').trim();
+               const img = (c[2]||`https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(lat)}.jpg`).trim();
+               return {cz:c[0].trim(), latin:lat, img, alt:[], altIdx:0};
+             });
+}
+
+/* === localStorage ======================================================== */
+function save(){ localStorage.setItem('flashProg', JSON.stringify({deck,unknown,idx,round,rightCnt,wrongCnt})); }
+function load(){ return JSON.parse(localStorage.getItem('flashProg')||'null'); }
+function resetStorage(){ localStorage.removeItem('flashProg'); }
+
+/* === UI ================================================================== */
+const updStats = ()=> stats.textContent =
+  `Kolo ${round} | Karta ${idx+1}/${deck.length} | ✔ ${rightCnt} ✖ ${wrongCnt}`;
+
+function showCard(){
+  inner.classList.remove('flipped');
+  const cur = deck[idx];
+  pic.src = cur.img;
+  title.textContent = cur.cz;
+  updStats(); save();
+}
+
+function finishRound(){
+  alert(`Konec kola ${round}. ✔=${rightCnt} ✖=${wrongCnt}`);
+  if(unknown.length){
+    deck = unknown; unknown=[]; idx=0; round++; rightCnt=wrongCnt=0;
+    showCard();
+  }else{
+    alert('Hotovo – všechno znáte!');
+    card.style.display='none'; ctrl.style.display='none';
+    resetStorage();
+  }
+}
+
+function next(correct){
+  correct ? rightCnt++ : wrongCnt++;
+  if(!correct) unknown.push(deck[idx]);
+
+  inner.classList.remove('flipped');
+  setTimeout(()=>{
+    idx++;
+    if(idx>=deck.length) finishRound();
+    else showCard();
+  },TRANS);
+}
+
+/* === Wikimedia Commons API – nové obrázky =============================== */
+async function fetchAlternatives(card){
+  const url = `https://commons.wikimedia.org/w/api.php?action=query&origin=*&format=json`+
+              `&generator=search&gsrnamespace=6&gsrlimit=20&gsrsearch=intitle:${encodeURIComponent(card.latin)}`+
+              `&prop=imageinfo&iiprop=url`;
+  try{
+    const j = await fetch(url).then(r=>r.json());
+    if(j.query && j.query.pages){
+      card.alt = Object.values(j.query.pages)
+                       .map(p=>p.imageinfo && p.imageinfo[0].url)
+                       .filter(Boolean);
+    }
+  }catch(e){ console.error(e); }
+}
+
+async function changeImage(){
+  const cur = deck[idx];
+  if(!cur.alt.length){
+    await fetchAlternatives(cur);
+    if(!cur.alt.length){ alert('Nenašel jsem další obrázek'); return; }
+  }
+  cur.altIdx = Math.floor(Math.random() * cur.alt.length);
+  cur.img = cur.alt[cur.altIdx];
+  pic.src = cur.img;
+  save();
+}
+
+/* === posluchače ========================================================== */
+inner.addEventListener('click',()=>inner.classList.toggle('flipped'));
+btnW  .addEventListener('click',()=>next(false));
+btnR  .addEventListener('click',()=>next(true));
+btnAlt.addEventListener('click',changeImage);
+
+fileInput.addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload = ev=>{
+    deck = parseCSV(ev.target.result);
+    unknown=[]; idx=0; round=1; rightCnt=wrongCnt=0;
+    card.style.display='block'; ctrl.style.display='flex';
+    showCard();
+  };
+  r.readAsText(f,'utf-8');
+  e.target.value='';
+});
+
+btnReset.addEventListener('click',()=>{
+  if(confirm('Opravdu začít znovu?')){
+    resetStorage(); init();
+  }
+});
+
+/* === start =============================================================== */
+function init(){
+  const saved = load();
+  if(saved){
+    ({deck,unknown,idx,round,rightCnt,wrongCnt}=saved);
+  }else{
+    deck = parseCSV(DEFAULT_CSV);
+  }
+  if(deck.length){
+    card.style.display='block'; ctrl.style.display='flex';
+    showCard();
+  }
+}
+init();
+</script>
+</body>
+</html>
