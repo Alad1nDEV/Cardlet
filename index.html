@@ -1,56 +1,194 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Obrázkové flash-karty</title>
-<style>
- body{font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:column;align-items:center;
-      gap:18px;margin:0;padding:40px;background:#f0f0f0}
- h1{margin:0;font-size:2rem}
- #stats{font-size:1.1rem}
- #card{width:300px;height:400px;perspective:1000px;display:none}
- .inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .6s}
- .flipped{transform:rotateY(180deg)}
- .side{position:absolute;inset:0;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.25);
-       backface-visibility:hidden;display:flex;justify-content:center;align-items:center;
-       background:#fff;padding:20px;box-sizing:border-box}
- .side img{max-width:100%;max-height:100%;border-radius:10px}
- .back{transform:rotateY(180deg);font-size:1.3em;text-align:center}
- #ctrl{display:flex;gap:25px}
- button{font-size:2rem;padding:8px 22px;border:none;border-radius:8px;cursor:pointer;color:#fff;
-        transition:transform .15s}
- button:active{transform:scale(.88)}
- .wrong{background:#f44336}
- .right{background:#4caf50}
- .alt{background:#2196f3}
- .small{font-size:.9rem}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Obrázkové flash-karty</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+:root {
+  --primary: #6a82fb;
+  --secondary: #fc5c7d;
+  --success: #43e97b;
+  --danger:  #fc5c7d;
+  --glass-bg: rgba(255,255,255,0.25);
+  --glass-border: rgba(255,255,255,0.45);
+  --shadow: 0 8px 32px 0 rgba(31,38,135,0.37);
+}
+
+body {
+  font-family: 'Poppins', Arial, sans-serif;
+  background: linear-gradient(135deg, #fc5c7d 0%, #6a82fb 100%);
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 12px;
+  gap: 28px;
+}
+
+h1 {
+  font-size: 2.4rem;
+  margin: 0 0 12px 0;
+  color: #fff;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+#stats {
+  font-size: 1.1rem;
+  color: #fff;
+  background: rgba(0,0,0,0.12);
+  padding: 6px 18px;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+#card {
+  width: 340px;
+  height: 440px;
+  perspective: 1200px;
+  display: none;
+  margin: 0 auto;
+}
+
+.card-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.7s cubic-bezier(.4,2,.6,1);
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-side {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  backface-visibility: hidden;
+  background: var(--glass-bg);
+  border: 1.5px solid var(--glass-border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+  box-sizing: border-box;
+  backdrop-filter: blur(12px) saturate(120%);
+  transition: box-shadow .3s, border .3s;
+}
+
+.card-side img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 14px;
+  object-fit: contain;
+  box-shadow: 0 2px 12px rgba(80,80,80,0.10);
+  background: #fff;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+  font-size: 1.35em;
+  text-align: center;
+  color: #222;
+  padding: 20px;
+  word-break: break-word;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+#controls {
+  display: none;
+  gap: 22px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+button {
+  font-size: 2.1rem;
+  padding: 12px 26px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow: 0 2px 12px rgba(0,0,0,0.13);
+  transition: background .18s, transform .13s, box-shadow .18s;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:active {
+  transform: scale(0.92);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+
+.btn-wrong { background: linear-gradient(135deg, var(--danger), #fcb045);}
+.btn-right { background: linear-gradient(135deg, var(--success), #38f9d7);}
+.btn-alt   { background: linear-gradient(135deg, #f7971e, #ffd200);}
+.btn-prev  { background: #616161; font-size: 1.1rem; padding: 8px 18px;}
+
+.btn-small { font-size: 1.1rem; padding: 7px 20px; background: #fff; color: #333; border: 1px solid #eee;}
+.btn-small:active { background: #eee; }
+
+button:hover:not(.btn-small) {
+  filter: brightness(1.1) drop-shadow(0 2px 8px #fff4);
+}
+
+input[type="file"] {
+  font-size: 1.1rem;
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.7);
+  margin-right: 10px;
+}
+
+@media (max-width: 430px) {
+  #card { width: 98vw; height: 60vw; min-height: 220px; }
+  .card-inner, .card-side { padding: 10px;}
+}
+  </style>
 </head>
 <body>
 
-<h1>Obrázkové flash-karty</h1>
+  <h1>Obrázkové flash-karty</h1>
 
-<input type="file" id="file" accept=".csv">
-<button id="btnReset" class="small">Reset</button>
-<div id="stats"></div>
-
-<div id="card">
-  <div class="inner" id="inner">
-    <div class="side front"><img id="pic" alt=""></div>
-    <div class="side back" id="title"></div>
+  <div>
+    <input type="file" id="file" accept=".csv">
+    <button id="btnReset" class="btn-small">Reset</button>
   </div>
-</div>
+  <div id="stats"></div>
 
-<div id="ctrl" style="display:none">
-  <button class="wrong" id="btnWrong">✖</button>
-  <button class="alt"  id="btnAlt">🔄</button>
-  <button class="right" id="btnRight">✔</button>
-</div>
+  <div id="card">
+    <div class="card-inner" id="cardInner">
+      <div class="card-side card-front">
+        <img id="pic" alt="Obrázek">
+      </div>
+      <div class="card-side card-back" id="title"></div>
+    </div>
+  </div>
 
-<script>
-/* === výchozí ukázková data ============================================== */
-const DEFAULT_CSV = `krásnoočko,Euglena,https://commons.wikimedia.org/wiki/Special:FilePath/Euglena.jpg
+  <div id="controls">
+    <button class="btn-wrong" id="btnWrong" title="Nevěděl/a jsem">✖</button>
+    <button class="btn-alt"   id="btnAlt"   title="Jiný obrázek">🔄</button>
+    <button class="btn-right" id="btnRight" title="Věděl/a jsem">✔</button>
+    <button class="btn-prev btn-small" id="btnPrev" title="Předchozí karta">← Předchozí</button>
+  </div>
+
+  <script>
+    // --- Výchozí data pro ukázku ---
+    const DEFAULT_CSV = `krásnoočko,Euglena,https://commons.wikimedia.org/wiki/Special:FilePath/Euglena.jpg
 trepka,Paramecium,https://commons.wikimedia.org/wiki/Special:FilePath/Paramecium.jpg
 nezmar hnědý,Hydra oligactis,https://commons.wikimedia.org/wiki/Special:FilePath/Hydra_oligactis.jpg
 talířovka ušatá,Aurelia aurita,https://commons.wikimedia.org/wiki/Special:FilePath/Aurelia_aurita.jpg
@@ -216,144 +354,219 @@ sob polární,Rangifer tarandus,https://commons.wikimedia.org/wiki/Special:FileP
 zubr evropský,Bison bonasus,https://commons.wikimedia.org/wiki/Special:FilePath/Bison_bonasus.jpg
 kudu velký,Tragelaphus strepsiceros,https://commons.wikimedia.org/wiki/Special:FilePath/Tragelaphus_strepsiceros.jpg
 kamzík horský,Rupicapra rupicapra,https://commons.wikimedia.org/wiki/Special:FilePath/Rupicapra_rupicapra.jpg
-muflon,Ovis musimon,https://commons.wikimedia.org/wiki/Special:FilePath/Ovis_musimon.jpg`; // [1]
+muflon,Ovis musimon,https://commons.wikimedia.org/wiki/Special:FilePath/Ovis_musimon.jpg`;
 
-/* === proměnné stavu ====================================================== */
-const TRANS = 600;   // délka otočení (ms)
-let deck=[], unknown=[], idx=0, round=1, rightCnt=0, wrongCnt=0;
+    // --- Stav ---
+    let deck = [], unknown = [], idx = 0, round = 1, rightCnt = 0, wrongCnt = 0;
 
-/* === prvky DOM =========================================================== */
-const fileInput = document.getElementById('file');
-const btnReset  = document.getElementById('btnReset');
-const card      = document.getElementById('card');
-const inner     = document.getElementById('inner');
-const pic       = document.getElementById('pic');
-const title     = document.getElementById('title');
-const btnW      = document.getElementById('btnWrong');
-const btnR      = document.getElementById('btnRight');
-const btnAlt    = document.getElementById('btnAlt');
-const stats     = document.getElementById('stats');
-const ctrl      = document.getElementById('ctrl');
+    // --- DOM prvky ---
+    const fileInput = document.getElementById('file');
+    const btnReset  = document.getElementById('btnReset');
+    const card      = document.getElementById('card');
+    const cardInner = document.getElementById('cardInner');
+    const pic       = document.getElementById('pic');
+    const title     = document.getElementById('title');
+    const btnWrong  = document.getElementById('btnWrong');
+    const btnRight  = document.getElementById('btnRight');
+    const btnAlt    = document.getElementById('btnAlt');
+    const btnPrev   = document.getElementById('btnPrev');
+    const stats     = document.getElementById('stats');
+    const controls  = document.getElementById('controls');
 
-/* === CSV → objekty ======================================================= */
-function parseCSV(text){
-  return text.split(/\r?\n/)
-             .filter(l=>l.trim())
-             .map(l=>{
-               const c = l.split(',');
-               const lat = (c[1]||'').trim();
-               const img = (c[2]||`https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(lat)}.jpg`).trim();
-               return {cz:c[0].trim(), latin:lat, img, alt:[], altIdx:0};
-             });
-}
-
-/* === localStorage ======================================================== */
-function save(){ localStorage.setItem('flashProg', JSON.stringify({deck,unknown,idx,round,rightCnt,wrongCnt})); }
-function load(){ return JSON.parse(localStorage.getItem('flashProg')||'null'); }
-function resetStorage(){ localStorage.removeItem('flashProg'); }
-
-/* === UI ================================================================== */
-const updStats = ()=> stats.textContent =
-  `Kolo ${round} | Karta ${idx+1}/${deck.length} | ✔ ${rightCnt} ✖ ${wrongCnt}`;
-
-function showCard(){
-  inner.classList.remove('flipped');
-  const cur = deck[idx];
-  pic.src = cur.img;
-  title.textContent = cur.cz;
-  updStats(); save();
-}
-
-function finishRound(){
-  alert(`Konec kola ${round}. ✔=${rightCnt} ✖=${wrongCnt}`);
-  if(unknown.length){
-    deck = unknown; unknown=[]; idx=0; round++; rightCnt=wrongCnt=0;
-    showCard();
-  }else{
-    alert('Hotovo – všechno znáte!');
-    card.style.display='none'; ctrl.style.display='none';
-    resetStorage();
-  }
-}
-
-function next(correct){
-  correct ? rightCnt++ : wrongCnt++;
-  if(!correct) unknown.push(deck[idx]);
-
-  inner.classList.remove('flipped');
-  setTimeout(()=>{
-    idx++;
-    if(idx>=deck.length) finishRound();
-    else showCard();
-  },TRANS);
-}
-
-/* === Wikimedia Commons API – nové obrázky =============================== */
-async function fetchAlternatives(card){
-  const url = `https://commons.wikimedia.org/w/api.php?action=query&origin=*&format=json`+
-              `&generator=search&gsrnamespace=6&gsrlimit=20&gsrsearch=intitle:${encodeURIComponent(card.latin)}`+
-              `&prop=imageinfo&iiprop=url`;
-  try{
-    const j = await fetch(url).then(r=>r.json());
-    if(j.query && j.query.pages){
-      card.alt = Object.values(j.query.pages)
-                       .map(p=>p.imageinfo && p.imageinfo[0].url)
-                       .filter(Boolean);
+    // --- CSV parsing ---
+    function parseCSV(text) {
+      return text.split(/\r?\n/)
+        .filter(line => line.trim())
+        .map(line => {
+          const cells = line.split(',');
+          return {
+            cz:   (cells[0] || '').trim(),
+            latin:(cells[1] || '').trim(),
+            img:  (cells[2] || '').trim(),
+            alt: [],
+            altIdx: 0
+          };
+        });
     }
-  }catch(e){ console.error(e); }
-}
 
-async function changeImage(){
-  const cur = deck[idx];
-  if(!cur.alt.length){
-    await fetchAlternatives(cur);
-    if(!cur.alt.length){ alert('Nenašel jsem další obrázek'); return; }
-  }
-  cur.altIdx = Math.floor(Math.random() * cur.alt.length);
-  cur.img = cur.alt[cur.altIdx];
-  pic.src = cur.img;
-  save();
-}
+    // --- LocalStorage ---
+    function saveProgress() {
+      localStorage.setItem('flashProg', JSON.stringify({deck, unknown, idx, round, rightCnt, wrongCnt}));
+    }
+    function loadProgress() {
+      return JSON.parse(localStorage.getItem('flashProg') || 'null');
+    }
+    function resetStorage() {
+      localStorage.removeItem('flashProg');
+    }
 
-/* === posluchače ========================================================== */
-inner.addEventListener('click',()=>inner.classList.toggle('flipped'));
-btnW  .addEventListener('click',()=>next(false));
-btnR  .addEventListener('click',()=>next(true));
-btnAlt.addEventListener('click',changeImage);
+    // --- Zamíchání balíčku ---
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
 
-fileInput.addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload = ev=>{
-    deck = parseCSV(ev.target.result);
-    unknown=[]; idx=0; round=1; rightCnt=wrongCnt=0;
-    card.style.display='block'; ctrl.style.display='flex';
-    showCard();
-  };
-  r.readAsText(f,'utf-8');
-  e.target.value='';
-});
+    // --- Statistiky ---
+    function updateStats() {
+      stats.textContent = `Kolo ${round} | Karta ${idx + 1} z ${deck.length} | ✔ ${rightCnt} ✖ ${wrongCnt}`;
+    }
 
-btnReset.addEventListener('click',()=>{
-  if(confirm('Opravdu začít znovu?')){
-    resetStorage(); init();
-  }
-});
+    // --- Zobrazení karty ---
+    function showCard() {
+      cardInner.classList.remove('flipped');
+      const cur = deck[idx];
+      if (cur.alt.length) {
+        cur.altIdx = Math.floor(Math.random() * cur.alt.length);
+        cur.img = cur.alt[cur.altIdx];
+      }
+      pic.src = cur.img;
+      pic.alt = cur.cz || 'Obrázek';
+      title.textContent = cur.cz;
+      updateStats();
+      saveProgress();
+    }
 
-/* === start =============================================================== */
-function init(){
-  const saved = load();
-  if(saved){
-    ({deck,unknown,idx,round,rightCnt,wrongCnt}=saved);
-  }else{
+    // --- Konec kola / opakování neznámých ---
+    function finishRound() {
+      setTimeout(() => {
+        alert(`Konec kola ${round}.\n✔ = ${rightCnt}   ✖ = ${wrongCnt}`);
+        if (unknown.length) {
+          deck = unknown;
+          unknown = [];
+          idx = 0;
+          round++;
+          rightCnt = wrongCnt = 0;
+          shuffle(deck);
+          showCard();
+        } else {
+          alert('Hotovo – všechno znáte!');
+          card.style.display = 'none';
+          controls.style.display = 'none';
+          resetStorage();
+        }
+      }, 300);
+    }
+
+    // --- Další karta ---
+    function next(correct) {
+      if (correct) rightCnt++; else wrongCnt++;
+      if (!correct) unknown.push(deck[idx]);
+      cardInner.classList.remove('flipped');
+      setTimeout(() => {
+        idx++;
+        if (idx >= deck.length) finishRound();
+        else showCard();
+      }, 500);
+    }
+
+    // --- Předchozí karta ---
+    function prev() {
+      if (idx > 0) {
+        idx--;
+        cardInner.classList.remove('flipped');
+        showCard();
+      }
+    }
+
+    // --- Wikimedia Commons: alternativní obrázky ---
+    async function fetchAlternatives(card) {
+      const url = `https://commons.wikimedia.org/w/api.php?action=query&origin=*&format=json` +
+                  `&generator=search&gsrnamespace=6&gsrlimit=20&gsrsearch=intitle:${encodeURIComponent(card.latin || card.cz)}` +
+                  `&prop=imageinfo&iiprop=url`;
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (data.query && data.query.pages) {
+          card.alt = Object.values(data.query.pages)
+            .map(p => p.imageinfo && p.imageinfo[0].url)
+            .filter(Boolean);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function changeImage() {
+      const cur = deck[idx];
+      if (!cur.alt.length) {
+        await fetchAlternatives(cur);
+        if (!cur.alt.length) {
+          alert('Nenašel jsem další obrázek');
+          return;
+        }
+      }
+      cur.altIdx = Math.floor(Math.random() * cur.alt.length);
+      cur.img = cur.alt[cur.altIdx];
+      pic.src = cur.img;
+      saveProgress();
+    }
+
+    // --- Ovládání ---
+    cardInner.addEventListener('click', () => cardInner.classList.toggle('flipped'));
+    btnWrong.addEventListener('click', () => next(false));
+    btnRight.addEventListener('click', () => next(true));
+    btnAlt.addEventListener('click', changeImage);
+    btnPrev.addEventListener('click', prev);
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        deck = parseCSV(ev.target.result);
+        unknown = [];
+        idx = 0;
+        round = 1;
+        rightCnt = wrongCnt = 0;
+        shuffle(deck);
+        card.style.display = 'block';
+        controls.style.display = 'flex';
+        showCard();
+      };
+      reader.readAsText(file, 'utf-8');
+      e.target.value = '';
+    });
+
+    btnReset.addEventListener('click', () => {
+      if (confirm('Opravdu začít znovu?')) {
+        resetStorage();
+        init(true);
+      }
+    });
+
+    // --- Inicializace ---
+    function init(reset = false) {
+  if (!reset) {
+    const saved = loadProgress();
+    if (saved) {
+      ({deck, unknown, idx, round, rightCnt, wrongCnt} = saved);
+    } else {
+      deck = parseCSV(DEFAULT_CSV);
+      shuffle(deck);
+      unknown = [];
+      idx = 0;
+      round = 1;
+      rightCnt = 0;
+      wrongCnt = 0;
+    }
+  } else {
     deck = parseCSV(DEFAULT_CSV);
+    shuffle(deck);
+    unknown = [];
+    idx = 0;
+    round = 1;
+    rightCnt = 0;
+    wrongCnt = 0;
   }
-  if(deck.length){
-    card.style.display='block'; ctrl.style.display='flex';
+  if (deck.length) {
+    card.style.display = 'block';
+    controls.style.display = 'flex';
     showCard();
   }
 }
-init();
-</script>
+    init();
+  </script>
 </body>
 </html>
