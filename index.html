@@ -406,7 +406,7 @@ muflon,Ovis musimon,https://commons.wikimedia.org/wiki/Special:FilePath/Ovis_mus
         cur.img = cur.alt[cur.altIdx];
       }
       pic.src = cur.img;
-      pic.alt = cur.cz || 'Obrázek';
+      pic.alt = /*cur.cz ||*/ 'Obrázek';
       title.textContent = cur.cz;
       updateStats();
       saveProgress();
